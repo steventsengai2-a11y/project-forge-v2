@@ -336,7 +336,12 @@ def gemini_single_call(readings):
 
 st.set_page_config(page_title="Project Forge", layout="wide")
 st.title("Project Forge — Self-Healing Industrial Brain")
-st.caption("Redis Stream (Upstash) → Gemini EE+ACE (single call) → Action payload")
+st.caption("Turn raw factory telemetry into verified actions: detect anomalies, decide responses, and log maintenance events in seconds.")
+st.markdown(
+    "- Real-time EE: Spot early warning signals from Redis Stream telemetry.\n"
+    "- ACE Decisioning: Convert model insights into an executable action payload.\n"
+    "- Audit trail: Emit a structured maintenance event log for human review and traceability."
+)
 
 if "readings" not in st.session_state:
     st.session_state.readings = []
@@ -348,9 +353,13 @@ if "data_source" not in st.session_state:
 with st.sidebar:
     st.header("Controls")
 
-    st.markdown("**How to demo**")
-    st.markdown("- Step 1: Click “Fetch Stream Data” (or “Generate Simulated Data”).")
-    st.markdown("- Step 2: Click “Run EE+ACE (Single Call)”.")
+    # st.markdown("**How to demo**")
+    # st.markdown("- Step 1: Click “Fetch Stream Data” (or “Generate Simulated Data”).")
+    # st.markdown("- Step 2: Click “Run EE+ACE (Single Call)”.")
+    st.markdown("**Demo flow**")
+    st.markdown("1) Fetch Stream Data (or Generate Simulated Data)")
+    st.markdown("2) Run EE+ACE (Single Call)")
+    st.markdown("3) Review the Action Payload and Maintenance Event Log")
     st.divider()
 
     n_entries = st.number_input("Entries to fetch", 5, 200, 20)
@@ -358,8 +367,10 @@ with st.sidebar:
 
     # Status (no debug)
     st.markdown("**Status**")
-    st.write(f"Data source: {st.session_state.data_source}")
-    st.write(f"Gemini model: {GEMINI_MODEL_NAME}")
+    # st.write(f"Data source: {st.session_state.data_source}")
+    # st.write(f"Gemini model: {GEMINI_MODEL_NAME}")
+    st.write(f"Decision engine: Gemini ({GEMINI_MODEL_NAME})")
+    st.write(f"Telemetry source: {st.session_state.data_source}")
 
     st.divider()
 
@@ -392,7 +403,8 @@ with st.sidebar:
 col1, col2, col3 = st.columns([1.2, 1, 1])
 
 with col1:
-    st.subheader("Raw Stream Telemetry")
+    # st.subheader("Raw Stream Telemetry")
+    st.subheader("Telemetry Inbox")
     if st.session_state.readings:
         df = pd.DataFrame(st.session_state.readings)
         st.dataframe(df, use_container_width=True)
@@ -402,7 +414,20 @@ with col1:
         st.info("No data yet. Use the sidebar to fetch or generate data.")
 
 with col2:
-    st.subheader("EE Result")
+    # st.subheader("EE Result")
+    st.subheader("Signal Health (EE)")
+    st.caption("Explainable diagnosis (structured JSON)")
+    # EE KPIs (productized)
+    if st.session_state.result and "error" not in st.session_state.result:
+        ee = (st.session_state.result or {}).get("ee_result", {}) or {}
+        st.metric("Anomaly", "YES" if ee.get("anomaly_detected") else "NO")
+        st.metric("Severity", str(ee.get("severity", "—")).upper())
+        st.metric("Confidence", f"{ee.get('confidence', '—')}")
+    else:
+        st.metric("Anomaly", "—")
+        st.metric("Severity", "—")
+        st.metric("Confidence", "—")
+
     res = st.session_state.result
     if res:
         if "error" in res:
@@ -423,7 +448,22 @@ with col2:
         st.info("Run EE+ACE to see results.")
 
 with col3:
-    st.subheader("ACE Decision")
+    # st.subheader("ACE Decision")
+    st.subheader("Operator-Ready Response (ACE)")
+    st.caption("Executable command + maintenance log (structured JSON)")
+    # ACE KPIs (productized)
+    if st.session_state.result and "error" not in st.session_state.result:
+        ace = (st.session_state.result or {}).get("ace_result", {}) or {}
+        decision = str(ace.get("decision", "—")).upper()
+        rules = ace.get("matched_rules", []) or []
+        st.metric("Decision", decision)
+        st.metric("Rules matched", str(len(rules)))
+        st.metric("Action payload", "READY" if ace.get("action_payload") else "—")
+    else:
+        st.metric("Decision", "—")
+        st.metric("Rules matched", "—")
+        st.metric("Action payload", "—")
+
     res = st.session_state.result
     if res and "error" not in res:
         ace = res.get("ace_result", {})
