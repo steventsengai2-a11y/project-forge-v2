@@ -348,7 +348,7 @@ if "data_source" not in st.session_state:
 with st.sidebar:
     st.header("Controls")
 
-    st.markdown("**How to demo (English)**")
+    st.markdown("**How to demo**")
     st.markdown("- Step 1: Click “Fetch Stream Data” (or “Generate Simulated Data”).")
     st.markdown("- Step 2: Click “Run EE+ACE (Single Call)”.")
     st.divider()
